@@ -1,6 +1,6 @@
 # Module Diagrams
 
-Generate **source-grounded architecture diagrams for real codebases** with your coding agent. This skill traces implementations and call sites, writes editable Mermaid diagrams, and can render them to local SVG files.
+Generate **source-grounded architecture diagrams for real codebases** with your coding agent. This skill traces implementations and call sites, writes editable Mermaid diagrams, and renders validated local SVG files.
 
 [![skills.sh](https://skills.sh/b/TraiNguyenVan/module-diagrams)](https://skills.sh/TraiNguyenVan/module-diagrams)
 
@@ -48,7 +48,7 @@ npx skills add TraiNguyenVan/module-diagrams -g
 
 For example:
 
-> Generate a Greptile-style architecture diagram for `src/economy/`. Trace the important dependencies and database interaction flow from the actual implementation. Save the Mermaid source, SVG rendering when available, and source evidence under `docs/diagrams/`.
+> Generate a Greptile-style architecture diagram for `src/economy/`. Trace the important dependencies and database interaction flow from the actual implementation. Save the Mermaid source, validated SVG rendering, and source evidence under `docs/diagrams/`.
 
 That's it. The agent reads the requested code and creates the diagram files in your repository.
 
@@ -112,27 +112,44 @@ For details about installation scope, non-interactive installs, and other source
 2. **Trace real behavior.** Follow symbol definitions and call sites; consult tests, configuration, schemas, and persistence or network boundaries where relevant.
 3. **Choose useful views.** Create the smallest set of architecture and runtime/data-flow diagrams that explain the requested behavior.
 4. **Record evidence.** Link important components and relationships to repository-relative source paths, adding line numbers where practical.
-5. **Validate and render.** Check Mermaid syntax and readability. If Mermaid CLI is available, render SVG files; otherwise keep the Mermaid source and report the blocker.
+5. **Validate and render.** Check Mermaid syntax and readability, then render and validate an SVG for every requested diagram. If rendering fails, preserve the Mermaid source, report the blocker, and mark the diagram task incomplete.
 
 ## Rendering diagrams
 
-Rendering is optional. If [Mermaid CLI](https://github.com/mermaid-js/mermaid-cli) is already installed, run it against a generated source file:
+SVG rendering is required for a complete diagram task. The skill uses a pinned Mermaid CLI fallback so results remain reproducible and does not add a project dependency:
 
 ```bash
-mmdc \
+render_mmd() {
+  if command -v mmdc >/dev/null 2>&1; then
+    mmdc "$@"
+  else
+    npx --yes --package @mermaid-js/mermaid-cli@12.0.0 mmdc "$@"
+  fi
+}
+
+render_mmd --version
+```
+
+Run a smoke test before rendering project files. It detects browser and system-library problems without creating project output:
+
+```bash
+smoke_dir=$(mktemp -d)
+printf '%s\n' 'flowchart LR' '  A[Source] --> B[Rendered]' > "$smoke_dir/smoke.mmd"
+render_mmd -i "$smoke_dir/smoke.mmd" -o "$smoke_dir/smoke.svg"
+test -s "$smoke_dir/smoke.svg" && grep -q '<svg' "$smoke_dir/smoke.svg"
+```
+
+If Chromium fails with a sandbox or zygote error in a trusted local environment, retry with a temporary Puppeteer configuration:
+
+```bash
+puppeteer_config=$(mktemp)
+printf '%s\n' '{"args":["--no-sandbox","--disable-setuid-sandbox"]}' > "$puppeteer_config"
+render_mmd -p "$puppeteer_config" \
   -i docs/diagrams/economy-architecture.mmd \
   -o docs/diagrams/economy-architecture.svg
 ```
 
-Or invoke it without adding a project dependency:
-
-```bash
-npx --yes --package @mermaid-js/mermaid-cli mmdc \
-  -i docs/diagrams/economy-architecture.mmd \
-  -o docs/diagrams/economy-architecture.svg
-```
-
-Rendering can depend on your environment and the browser/system libraries required by Mermaid CLI. If it fails, the skill should preserve the editable `.mmd` source and state what prevented rendering. It should not claim an SVG was created unless the file exists.
+Disabling the browser sandbox reduces isolation, so do not use this fallback for untrusted input. If rendering still fails because the browser, network, or system libraries are unavailable, preserve the `.mmd` source, report the exact error, and mark the diagram task incomplete. Do not claim an SVG exists unless it is non-empty and contains SVG markup. Render to a temporary path and move it into place only after that check; inspect existing files before replacing them.
 
 ## Accuracy and limitations
 
@@ -145,7 +162,7 @@ Rendering can depend on your environment and the browser/system libraries requir
 
 **The skill is not discovered.** Confirm the CLI found it with `npx skills add TraiNguyenVan/module-diagrams --list`, then verify that your agent supports Agent Skills and reload it if needed.
 
-**Only Mermaid source was created.** That is expected when Mermaid CLI cannot run. Follow the rendering instructions above or inspect the `.mmd` file in a Mermaid-compatible viewer.
+**Only Mermaid source was created.** The diagram task is incomplete. Follow the rendering instructions above, resolve the reported environment error, and rerun the SVG render.
 
 **The diagram contains a questionable relationship.** Ask the agent to trace that specific edge back to its implementation and call sites, then revise the diagram and evidence notes.
 
