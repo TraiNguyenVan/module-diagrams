@@ -1,88 +1,158 @@
 # Module Diagrams
 
-A portable agent skill for generating evidence-backed, Greptile-style architecture diagrams from a codebase's actual source. It creates local Mermaid source files and, when possible, renders SVG diagrams. It does **not** post PR comments or change application code.
+Generate **source-grounded architecture diagrams for real codebases** with your coding agent. This skill traces implementations and call sites, writes editable Mermaid diagrams, and can render them to local SVG files.
 
-## What it generates
+[![skills.sh](https://skills.sh/b/TraiNguyenVan/module-diagrams)](https://skills.sh/TraiNguyenVan/module-diagrams)
 
-- **Architecture diagrams** for components, responsibilities, dependencies, and subsystem boundaries.
-- **Sequence diagrams** for important runtime paths.
-- **Data-flow diagrams** for data transformations, calls, and persistence.
-- **Class or ER diagrams** when those relationships are useful and supported by the source.
-- **Evidence notes** that cite repository-relative source files and line numbers for important relationships.
+> Understand how a module works—not just what its folder structure looks like.
 
-The skill instructs the agent to trace implementations and call sites, keep diagrams readable, and label uncertainty rather than inventing connections.
+Module Diagrams is inspired by the code-understanding and visual-explanation workflows associated with Greptile-style reviews. It is an independent agent skill, not a Greptile integration: it works in your local repository and does not post PR comments.
 
-## Install with `npx skills` (recommended)
+## What it creates
 
-You need Node.js 22.20 or later. From the root of the project where you want to use the skill, run:
+| Diagram or artifact | Purpose |
+| --- | --- |
+| **Architecture overview** | Shows major components, responsibilities, boundaries, and dependencies. |
+| **Sequence diagram** | Explains an important runtime path in call order. |
+| **Data-flow diagram** | Tracks where data originates, how it changes, and where it is returned or persisted. |
+| **Class or ER diagram** | Captures class/interface or data-model relationships when they are useful. |
+| **Evidence notes** | Records the source files—and line references where practical—that support key relationships. |
+
+The skill favors a small set of readable diagrams over a single, oversized map. It should omit unsupported connections and call out uncertainty instead of presenting guesses as facts.
+
+## Quick start
+
+### 1. Install the skill
+
+Requires **Node.js 22.20 or later** for the `npx skills` CLI.
+
+Install interactively in the project where you want to use it:
 
 ```bash
 npx skills add TraiNguyenVan/module-diagrams
 ```
 
-The CLI will prompt you to choose the skill installation target(s). Skills are installed to the current project by default.
-
-### Install for specific agents
-
-For example, install it for OpenCode and Codex in the current project:
+Install specifically for OpenCode and Codex:
 
 ```bash
 npx skills add TraiNguyenVan/module-diagrams -a opencode -a codex
 ```
 
-Use the agent names recognized by the CLI for your setup. To install globally so the skill is available across projects, add `-g`:
+To install it globally for reuse across projects, add `-g`:
 
 ```bash
 npx skills add TraiNguyenVan/module-diagrams -g
 ```
 
-You can also combine global scope with explicit agents:
+### 2. Ask your coding agent
+
+For example:
+
+> Generate a Greptile-style architecture diagram for `src/economy/`. Trace the important dependencies and database interaction flow from the actual implementation. Save the Mermaid source, SVG rendering when available, and source evidence under `docs/diagrams/`.
+
+That's it. The agent reads the requested code and creates the diagram files in your repository.
+
+## Example output
+
+A typical output directory might look like this:
+
+```text
+docs/diagrams/
+├── economy-architecture.mmd
+├── economy-architecture.svg
+├── economy-flow.mmd
+├── economy-flow.svg
+└── economy-evidence.md
+```
+
+The exact files depend on the module and whether additional diagrams clarify its behavior. The `.mmd` files are editable Mermaid source; `.svg` files are renderings; the evidence file explains the important source-backed relationships. These names illustrate the expected structure—no diagrams are generated until you run the skill on your codebase.
+
+## Installation options
+
+### Install for one or more agents
+
+The CLI prompts you to choose installation targets when agent flags are omitted. To select targets explicitly:
+
+```bash
+npx skills add TraiNguyenVan/module-diagrams -a opencode -a codex
+```
+
+Use agent identifiers supported by your installed version of the CLI. The [Skills CLI documentation](https://github.com/vercel-labs/skills/blob/main/docs/commands.md) lists additional agents and options.
+
+### Install globally
 
 ```bash
 npx skills add TraiNguyenVan/module-diagrams -g -a opencode -a codex
 ```
 
-### Manage the installation
+### List, check, update, or remove
 
 ```bash
-# List skills installed in the current scope
+# Preview skills discovered in this repository
+npx skills add TraiNguyenVan/module-diagrams --list
+
+# List installed skills
 npx skills list
 
 # Check for available updates
 npx skills check
 
 # Update installed skills
-npx skills update
+npx skills update module-diagrams
+
+# Remove the skill when no longer needed
+npx skills remove module-diagrams
 ```
 
-See the [Skills CLI documentation](https://github.com/vercel-labs/skills/blob/main/docs/commands.md) for all options and supported agents.
+For details about installation scope, non-interactive installs, and other source formats, see the [official CLI reference](https://github.com/vercel-labs/skills/blob/main/docs/commands.md).
 
-## Manual install
+## How it works
 
-If you prefer not to use the CLI, install the repository in a skills directory. From your project root:
+1. **Scope the module.** Inspect repository guidance, entry points, and the boundaries of the requested component.
+2. **Trace real behavior.** Follow symbol definitions and call sites; consult tests, configuration, schemas, and persistence or network boundaries where relevant.
+3. **Choose useful views.** Create the smallest set of architecture and runtime/data-flow diagrams that explain the requested behavior.
+4. **Record evidence.** Link important components and relationships to repository-relative source paths, adding line numbers where practical.
+5. **Validate and render.** Check Mermaid syntax and readability. If Mermaid CLI is available, render SVG files; otherwise keep the Mermaid source and report the blocker.
+
+## Rendering diagrams
+
+Rendering is optional. If [Mermaid CLI](https://github.com/mermaid-js/mermaid-cli) is already installed, run it against a generated source file:
 
 ```bash
-mkdir -p .agents/skills
-git clone https://github.com/TraiNguyenVan/module-diagrams.git .agents/skills/module-diagrams
+mmdc \
+  -i docs/diagrams/economy-architecture.mmd \
+  -o docs/diagrams/economy-architecture.svg
 ```
 
-For a user-level install:
+Or invoke it without adding a project dependency:
 
 ```bash
-mkdir -p ~/.agents/skills
-git clone https://github.com/TraiNguyenVan/module-diagrams.git ~/.agents/skills/module-diagrams
+npx --yes --package @mermaid-js/mermaid-cli mmdc \
+  -i docs/diagrams/economy-architecture.mmd \
+  -o docs/diagrams/economy-architecture.svg
 ```
 
-Use the directory convention supported by your chosen coding agent. The CLI is recommended because it can configure the skill for selected agents.
+Rendering can depend on your environment and the browser/system libraries required by Mermaid CLI. If it fails, the skill should preserve the editable `.mmd` source and state what prevented rendering. It should not claim an SVG was created unless the file exists.
 
-## Use it
+## Accuracy and limitations
 
-Ask your coding agent something like:
+- **Evidence first.** Relationships should be traceable to inspected code, tests, or configuration; uncertainty should be marked or the edge omitted.
+- **Readable over exhaustive.** Large modules may need multiple diagrams. A diagram is not a guarantee that every code path has been captured.
+- **Agent-dependent.** This is a source-reading workflow, not a dedicated static-analysis engine. Accuracy depends on the coding agent and the evidence it actually inspects.
+- **Local by default.** The skill creates documentation files; it does not edit application code, install project dependencies, commit changes, push branches, open pull requests, or post GitHub comments.
 
-> Generate a Greptile-style architecture diagram for `src/economy/` and explain the database interaction flow. Save the editable Mermaid source and local SVG under `docs/diagrams/`.
+## Troubleshooting
 
-By default, outputs go under `docs/diagrams/` in your project. The editable `.mmd` files are the source of truth; `.svg` renderings are produced when Mermaid CLI is available. If rendering is unavailable, the agent should still save the Mermaid files and report the exact blocker.
+**The skill is not discovered.** Confirm the CLI found it with `npx skills add TraiNguyenVan/module-diagrams --list`, then verify that your agent supports Agent Skills and reload it if needed.
 
-## Scope and safety
+**Only Mermaid source was created.** That is expected when Mermaid CLI cannot run. Follow the rendering instructions above or inspect the `.mmd` file in a Mermaid-compatible viewer.
 
-The skill is a code-reading and documentation workflow, not a dedicated static-analysis engine. Diagram accuracy depends on the agent tracing the relevant implementation correctly. By default, it works locally and does not commit, push, open PRs, or post to GitHub.
+**The diagram contains a questionable relationship.** Ask the agent to trace that specific edge back to its implementation and call sites, then revise the diagram and evidence notes.
+
+## Contributing and feedback
+
+Bug reports, unclear diagrams, and focused improvements are welcome through [GitHub Issues](https://github.com/TraiNguyenVan/module-diagrams/issues). For a diagram-quality report, include the requested module, the questionable relationship, and the source location that demonstrates the expected behavior.
+
+## License
+
+No license file is currently included in this repository. Public visibility alone does not grant additional permissions to reuse or redistribute the project.
