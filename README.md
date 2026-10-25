@@ -12,23 +12,68 @@ A portable agent skill for generating evidence-backed, Greptile-style architectu
 
 The skill instructs the agent to trace implementations and call sites, keep diagrams readable, and label uncertainty rather than inventing connections.
 
-## Install in a repository
+## Install with `npx skills` (recommended)
 
-From the repository root:
+You need Node.js 22.20 or later. From the root of the project where you want to use the skill, run:
+
+```bash
+npx skills add TraiNguyenVan/module-diagrams
+```
+
+The CLI will prompt you to choose the skill installation target(s). Skills are installed to the current project by default.
+
+### Install for specific agents
+
+For example, install it for OpenCode and Codex in the current project:
+
+```bash
+npx skills add TraiNguyenVan/module-diagrams -a opencode -a codex
+```
+
+Use the agent names recognized by the CLI for your setup. To install globally so the skill is available across projects, add `-g`:
+
+```bash
+npx skills add TraiNguyenVan/module-diagrams -g
+```
+
+You can also combine global scope with explicit agents:
+
+```bash
+npx skills add TraiNguyenVan/module-diagrams -g -a opencode -a codex
+```
+
+### Manage the installation
+
+```bash
+# List skills installed in the current scope
+npx skills list
+
+# Check for available updates
+npx skills check
+
+# Update installed skills
+npx skills update
+```
+
+See the [Skills CLI documentation](https://github.com/vercel-labs/skills/blob/main/docs/commands.md) for all options and supported agents.
+
+## Manual install
+
+If you prefer not to use the CLI, install the repository in a skills directory. From your project root:
 
 ```bash
 mkdir -p .agents/skills
 git clone https://github.com/TraiNguyenVan/module-diagrams.git .agents/skills/module-diagrams
 ```
 
-## Install for your user
+For a user-level install:
 
 ```bash
 mkdir -p ~/.agents/skills
 git clone https://github.com/TraiNguyenVan/module-diagrams.git ~/.agents/skills/module-diagrams
 ```
 
-Compatible agents need to support the Agent Skills `SKILL.md` format and discover the corresponding skills directory.
+Use the directory convention supported by your chosen coding agent. The CLI is recommended because it can configure the skill for selected agents.
 
 ## Use it
 
