@@ -12,13 +12,15 @@ Module Diagrams is inspired by the code-understanding and visual-explanation wor
 
 | Diagram or artifact | Purpose |
 | --- | --- |
-| **Architecture overview** | Shows major components, responsibilities, boundaries, and dependencies. |
-| **Sequence diagram** | Explains an important runtime path in call order. |
-| **Data-flow diagram** | Tracks where data originates, how it changes, and where it is returned or persisted. |
+| **Architecture overview** | Compact view of 6–10 major components, responsibilities, boundaries, and primary dependencies. |
+| **Runtime flow** | Focused view of one important path in call order. |
+| **Data-flow diagram** | Optional view of a distinct transformation or persistence path. |
 | **Class or ER diagram** | Captures class/interface or data-model relationships when they are useful. |
-| **Evidence notes** | Records the source files—and line references where practical—that support key relationships. |
+| **Evidence notes** | Records the source evidence for every diagram node and edge, with line references where available. |
 
 The skill favors a small set of readable diagrams over a single, oversized map. It should omit unsupported connections and call out uncertainty instead of presenting guesses as facts.
+
+The default deliverable is an architecture overview plus one runtime flow. The overview stays compact; detailed branches, data transformations, and secondary relationships go into separate diagrams only when they add useful understanding.
 
 ## Quick start
 
@@ -48,7 +50,7 @@ npx skills add TraiNguyenVan/module-diagrams -g
 
 For example:
 
-> Generate a Greptile-style architecture diagram for `src/economy/`. Trace the important dependencies and database interaction flow from the actual implementation. Save the Mermaid source, validated SVG rendering, and source evidence under `docs/diagrams/`.
+> Generate the default two-view diagrams for `src/economy/`: a compact architecture overview and one focused runtime flow. Trace the important dependencies and database interaction from the actual implementation. Save both Mermaid sources, validated SVG renderings, and source evidence under `docs/diagrams/`.
 
 That's it. The agent reads the requested code and creates the diagram files in your repository.
 
@@ -65,7 +67,7 @@ docs/diagrams/
 └── economy-evidence.md
 ```
 
-The exact files depend on the module and whether additional diagrams clarify its behavior. The `.mmd` files are editable Mermaid source; `.svg` files are renderings; the evidence file explains the important source-backed relationships. These names illustrate the expected structure—no diagrams are generated until you run the skill on your codebase.
+The architecture and flow pair is the default. A data-flow file is added only when it explains a separate transformation or persistence path. The `.mmd` files are editable Mermaid source; `.svg` files are validated renderings; the evidence file explains the important source-backed relationships. These names illustrate the expected structure—no diagrams are generated until you run the skill on your codebase.
 
 ## Installation options
 
@@ -110,7 +112,7 @@ For details about installation scope, non-interactive installs, and other source
 
 1. **Scope the module.** Inspect repository guidance, entry points, and the boundaries of the requested component.
 2. **Trace real behavior.** Follow symbol definitions and call sites; consult tests, configuration, schemas, and persistence or network boundaries where relevant.
-3. **Choose useful views.** Create the smallest set of architecture and runtime/data-flow diagrams that explain the requested behavior.
+3. **Choose useful views.** Create the default compact architecture overview and one focused runtime flow. Add a separate data-flow view only when it explains behavior the first two diagrams cannot show clearly.
 4. **Record evidence.** Link important components and relationships to repository-relative source paths, adding line numbers where practical.
 5. **Validate and render.** Check Mermaid syntax and readability, then render and validate an SVG for every requested diagram. If rendering fails, preserve the Mermaid source, report the blocker, and mark the diagram task incomplete.
 

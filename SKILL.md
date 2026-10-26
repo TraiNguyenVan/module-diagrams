@@ -13,6 +13,7 @@ Generate useful, accurate diagrams of an existing codebase for local viewing and
 - Treat the requested module, directory, class, feature, or execution path as the scope. If the user names no scope, choose one clearly bounded module from the current context. Record the selected repository root, module boundary, and excluded dependencies in the evidence file and final response.
 - Read source code before drawing conclusions. Trace important symbols to their definitions and call sites; inspect tests, configuration, schemas, and documentation when they establish behavior.
 - Create diagrams and supporting evidence under `docs/diagrams/` by default. If the repository already has an established documentation/diagram location, use it instead.
+- Use the default two-view deliverable: one compact architecture overview and one focused runtime flow. Add a data-flow diagram only when it explains a distinct transformation or persistence path.
 - Do not edit application code, build configuration, dependencies, or package manifests. Do not commit, push, open a PR, or post anything to GitHub. This skill's default output is local files only.
 - Do not invent components, relationships, runtime behavior, APIs, or data flow. Label uncertainty explicitly.
 - Use source identifiers and short summaries in labels. Do not copy secret values, tokens, credentials, private keys, connection strings, or sensitive payloads into diagrams or evidence; cite the configuration key and line instead.
@@ -29,7 +30,14 @@ Generate useful, accurate diagrams of an existing codebase for local viewing and
 
 ### 2. Choose the right diagram(s)
 
-Create the smallest set that clearly explains the module. Common choices:
+Create the default two-view set unless the user explicitly requests a different shape:
+
+1. **Architecture overview**: 6–10 top-level components, responsibilities, subsystem boundaries, and only the primary structural dependencies. Treat each node as a component or subsystem, not an individual file or function.
+2. **Runtime flow**: one important user-, event-, or scheduler-triggered path from entry point to return, response, or persistence. Keep it to roughly 4–10 participants and the messages needed to follow that path.
+
+Add a third diagram only when the module has a distinct data transformation or persistence story that the first two views cannot explain clearly.
+
+Common diagram types:
 
 - **Architecture/component diagram**: major components, responsibilities, dependencies, and subsystem boundaries.
 - **Sequence diagram**: one meaningful runtime path, with participants and call order supported by the implementation.
@@ -37,14 +45,20 @@ Create the smallest set that clearly explains the module. Common choices:
 - **Class diagram**: only when class/interface relationships are important to understanding the design.
 - **ER diagram**: only when actual schema/model relationships are present and relevant.
 
-Prefer one readable overview plus a focused flow diagram over one oversized diagram. Usually target roughly 8–25 nodes per diagram. Split diagrams if the result becomes crowded. Avoid diagrams that merely reproduce imports or directory structure without explaining behavior.
+- Keep the architecture overview at no more than 10 visible nodes and 20 visible edges. Group external libraries, infrastructure, and repeated adapters into one labeled node or subgraph.
+- Remove transitive dependency edges and low-value imports. Limit a node to roughly four visible outgoing edges; split or group the surrounding components when it exceeds that.
+- Keep structural dependencies in the architecture overview. Keep call order, events, and data movement in the runtime flow. Do not combine all three relationship types in one diagram.
+- Use a single dominant direction in the architecture overview (`flowchart LR` or `TB`). Prefer `sequenceDiagram` for the runtime flow when call order is the main story.
+- Use a separate diagram for alternate branches, secondary flows, or detailed class relationships. Never expand those branches until the overview becomes a mesh.
+- Avoid diagrams that merely reproduce imports or directory structure without explaining behavior.
 
 ### 3. Write Mermaid source and evidence
 
 Create files with stable, descriptive names, for example:
 
 - `docs/diagrams/<module>-architecture.mmd`
-- `docs/diagrams/<module>-flow.mmd` (only if a distinct runtime flow adds value)
+- `docs/diagrams/<module>-flow.mmd`
+- `docs/diagrams/<module>-data-flow.mmd` (only when a separate data-flow view is justified)
 - `docs/diagrams/<module>-evidence.md`
 
 Use Mermaid syntax compatible with Mermaid CLI and common Markdown renderers. Give the diagram a clear title. Use concise labels and meaningful subgraphs. Label edges when that clarifies the relationship. Make dependency direction and runtime call/data-flow direction unambiguous; do not mix them without saying which relationship is shown.
@@ -60,6 +74,8 @@ Before finishing:
 - Distinguish direct calls from indirect/event/configuration-driven relationships.
 - Remove speculative or low-value nodes and edges. If a relationship is uncertain, omit it or mark it as uncertain in the evidence notes.
 - Check for duplicate nodes, Mermaid-safe identifiers, ambiguous arrows, unreadable labels, syntax errors, and unnecessarily long edge crossings.
+- Count visible nodes and edges before rendering. If the architecture overview exceeds 10 nodes, 20 edges, or roughly four outgoing edges from one node, group, remove, or split content before continuing.
+- Inspect the rendered overview and flow as a reader would. If the primary path is hard to follow, labels overlap, or edges cross repeatedly, simplify the diagram and render it again.
 - Validate Mermaid syntax with a successful `mmdc` render or the pinned one-off CLI command below. A requested diagram is incomplete until its SVG exists and passes the output checks.
 - Do not claim the diagram is exhaustive unless you actually checked all relevant paths.
 
